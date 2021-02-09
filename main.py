@@ -4,23 +4,23 @@ from flask import jsonify
 from flask import json
 import zeep
 from flask import request
-
 from flask_cors import CORS
 import collections
 orderedDict = collections.OrderedDict()
-
-
 from collections import OrderedDict
 
 app = Flask(__name__)
 CORS(app)
+cors = CORS(app, resources={r"/*": {"origins":["http://localhost:4200"]}},supports_credentials=True)
 app.config['JSON_SORT_KEYS'] = False
-@app.route('/test12')
-def parseOFS():
+
+
+@app.route('/test12' , methods=['GET','POST'])
+def parseOFS(a):
      #a =",USER.NAME::USER.NAME/CIN::CIN/AGENCE::AGENCE/DATE::DATE,USER.NAME:1:1=BEN ROMDHANE MOHAMED ALI,CIN:1:1=07454400,AGENCE:1:1=Agence Hedi Chaker,DATE:1:1=03 DEC 2020"
      #a=",USER.NAME::USER.NAME/CIN::CIN/AGENCE::AGENCE/DATE::DATE,USER.NAME:1:1=SAADAOUI FIRAS,CIN:1:1=12662802,AGENCE:1:1=Agence Hedi Chaker,DATE:1:1=03 DEC 2020"
     #  a=",USER.NAME::USER.NAME/CIN::CIN/AGENCE::AGENCE/DATE::DATE,USER.NAME:1:1=BEN ROMDHANE MOHAMED ALI,CIN:1:1=07454400,AGENCE:1:1=Agence Hedi Chaker,DATE:1:1=03 DEC 2020"
-     a = returnOFS()
+    #  a = returnOFS()
      print("------------------>",str(a))
      b =a.split("/")
      c =b[3].split(":1=")
@@ -33,19 +33,10 @@ def parseOFS():
      print(data)
      return  json.dumps([data] , sort_keys=False)
 
-
-    #  data = OrderedDict([("nom", c[1].split(',')[0]), ("CIN", c[2].split(',')[0]), ("agence", c[3].split(',')[0])])
-    #  return  json.dumps({
-    #      data
-    #    # "date": c[4].split(',')[0]
-        
-
-       
-    # })
-@app.route('/getjson' , methods=['POST'])
+@app.route('/getjson' , methods=['GET','POST'])
 def returnOFS():
-    account = "0117881011176281"
-    print("------------------" ,getjson())
+    account =  request.args.get("cpt")
+    print("cpt recup  :" ,  request.args.get("cpt"))
     request_data = {
         "OfsRequest": "ENQUIRY.SELECT,,EODUSER/123456,ATTESTATION.ENG.PP,@ID:EQ="
         +account
@@ -56,26 +47,18 @@ def returnOFS():
     ofsResponse = client.service.callOfs(**request_data)
     #status = ofsResponse.Status.successIndicator
     ofsResponse = str(ofsResponse.OfsResponse)
-    print("test >>>>>", ofsResponse)
-    return ofsResponse
+    # print("test >>>>>", ofsResponse)
+    return parseOFS(ofsResponse)
+
+    
 
 
-@app.route('/getjson' , methods=['POST'])
-def getjson():
-    cpt = request.args.get("cpt")
-    # cpt = request.json["cpt"]
-    print(cpt)
-    return cpt
 
 @app.route('/test')
 def hello_world():
     request_data = {
         "OfsRequest": "ENQUIRY.SELECT,,EODUSER/123456,USER.AUTH,SIGN.ON.NAME:EQ=EODUSER"
     }
-
-    #wsdl = 'http://172.16.40.115:9095/TWSEB/services?wsdl'
-    #client = zeep.Client(wsdl=wsdl)
-    #ofsResponse = client.service.callOfs(**request_data)
 
     return jsonify({
         #"data": ofsResponse.ofsResponse
@@ -86,5 +69,8 @@ def hello_world():
         "date" : "29/01/2021"
     })
 
+
+
 if __name__ == '__main__':
-    app.run(host="localhost", port=8080, debug=True)
+    # app.run(host="localhost", port=8080, debug=True )
+    app.run(port=8080, debug=True, host='localhost', use_reloader=False)
